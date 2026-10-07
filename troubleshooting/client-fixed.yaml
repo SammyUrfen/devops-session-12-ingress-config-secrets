@@ -1,0 +1,27 @@
+# FIXED. Encoded with: echo -n "demo-password-not-real" | base64
+# No trailing newline, so the base64 ends in "==" instead of "Ao=".
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-db-secret
+type: Opaque
+data:
+  DB_PASSWORD: ZGVtby1wYXNzd29yZC1ub3QtcmVhbA==
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: db-client
+spec:
+  restartPolicy: Never
+  containers:
+    - name: psql
+      image: postgres:16-alpine
+      command: ["sh", "-c", "psql -h pg -U demo-user -d postgres -c 'select 1 as connected'"]
+      env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef: { name: app-db-secret, key: DB_PASSWORD }
+      resources:
+        requests: { cpu: 10m, memory: 16Mi }
+        limits: { cpu: 100m, memory: 64Mi }

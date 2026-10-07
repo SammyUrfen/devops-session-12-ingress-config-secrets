@@ -1,0 +1,36 @@
+# The database. Its password is set correctly with stringData (no base64 step).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pg-server-secret
+type: Opaque
+stringData:
+  POSTGRES_PASSWORD: demo-password-not-real
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pg
+  labels: { app: pg }
+spec:
+  containers:
+    - name: postgres
+      image: postgres:16-alpine
+      env:
+        - name: POSTGRES_USER
+          value: demo-user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef: { name: pg-server-secret, key: POSTGRES_PASSWORD }
+      ports: [{ containerPort: 5432 }]
+      resources:
+        requests: { cpu: 50m, memory: 64Mi }
+        limits: { cpu: 300m, memory: 256Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pg
+spec:
+  selector: { app: pg }
+  ports: [{ port: 5432 }]
